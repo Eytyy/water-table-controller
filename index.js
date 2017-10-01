@@ -9,7 +9,7 @@ const board = new five.Board({
   debug: false,
 });
 
-const ip = '192.168.1.27';
+const ip = '10.152.98.106';
 const port = '3000';
 
 const io = require('socket.io-client');
@@ -74,7 +74,7 @@ board.on('ready', () => {
     const a6 = new five.Button({
       pin: 'a6'
     });
-    a6.on('press', () => emmetButtonEvent('toggle-screen'))
+    a6.on('press', () => emmetButtonEvent('toggle-screen'));
 
     // data viz layer selection knob
     const sensor2 = new five.Sensor({
@@ -85,5 +85,14 @@ board.on('ready', () => {
       event: 'change-data-layer',
       payload: sensor2.scaleTo(0, 24),
     }));
-  /* - data controls */
+  /* - svg controls */
+  const a5 = new five.Button({
+    pin: 'a5'
+  });
+  a5.on('press', () => emmetButtonEvent('svg-1'));
+
+  const a4 = new five.Button({
+    pin: 'a4'
+  });
+  a4.on('press', () => emmetButtonEvent('svg-2'));
 });
