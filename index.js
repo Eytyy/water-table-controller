@@ -9,7 +9,9 @@ const board = new five.Board({
   debug: false,
 });
 
-const ip = '10.152.98.106';
+const ip = '192.168.1.3';
+// const ip = '192.168.1.4';
+
 const port = '3000';
 
 const io = require('socket.io-client');
@@ -20,20 +22,25 @@ socket.on('connect', function() {
 });
 
 let lastSeekValue = 0;
-let lastLayerValue = 0;
-
-const emmiKnobEvent = ({event, payload}) => {
-  if (event === 'seek-video') {
-    if (payload === lastSeekValue) {
-      return;
-    }
-    lastSeekValue = payload;
-  } else if (event === 'change-data-layer') {
-    if (payload === lastLayerValue) {
-      return;
-    }
-    lastLayerValue = payload;
+// seek video
+const onSeekVideo = ({event, payload}) => {
+  if (payload === lastSeekValue) {
+    return;
   }
+  lastSeekValue = payload;
+  socket.emit('fromTessel', {
+    event,
+    payload,
+  });
+};
+
+let lastLayerValue = 0;
+// toggle-layer
+const onChangeLayer = ({event, payload}) => {
+  if (payload === lastLayerValue) {
+    return;
+  }
+  lastLayerValue = payload;
 
   socket.emit('fromTessel', {
     event,
@@ -41,58 +48,70 @@ const emmiKnobEvent = ({event, payload}) => {
   });
 };
 
-const emmetButtonEvent = (value) => {
-  socket.emit('fromTessel', {
-    event: value,
-    payload: 0,
-  });
-};
 
 
 board.on('ready', () => {
+  // sensors
+  // timeline knob
+  const sensor = new five.Sensor({
+    pin: "b7",
+    freq: 250
+  });
+  sensor.on('change', () => onSeekVideo({
+    event: 'seek-video',
+    payload: sensor.scaleTo(0, 72),
+  }));
 
-  /* video controls */
-    // start button
-    const b6 = new five.Button({
-      pin: 'b6'
-    });
-    b6.on('press', () => emmetButtonEvent('start'))
+  const sensor2 = new five.Sensor({
+    pin: "a7",
+    freq: 250
+  });
+  sensor2.on('change', () => onChangeLayer({
+    event: 'change-data-layer',
+    payload: sensor2.scaleTo(0, 24),
+  })); 
 
-    // timeline knob
-    const sensor = new five.Sensor({
-      pin: "b7",
-      freq: 250
-    });
-    sensor.on('change', () => emmiKnobEvent({
-      event: 'seek-video',
-      payload: sensor.scaleTo(0, 72),
-    }));
-  /* - video controls */
+  // buttons
 
-  /* data controls */
-    // data viz toggle
-    const a6 = new five.Button({
-      pin: 'a6'
+  // start button
+  const b6 = new five.Button({
+    pin: 'b6'
+  });
+  b6.on('press', () => {
+    socket.emit('fromTessel', {
+      event: 'start',
+      payload: 0,
     });
-    a6.on('press', () => emmetButtonEvent('toggle-screen'));
+  });
 
-    // data viz layer selection knob
-    const sensor2 = new five.Sensor({
-      pin: "a7",
-      freq: 250
+  const b5 = new five.Button({
+    pin: 'b5'
+  });
+  b5.on('press', () => {
+    socket.emit('fromTessel', {
+      event: 'toggle-screen',
+      payload: 0,
     });
-    sensor2.on('change', () => emmiKnobEvent({
-      event: 'change-data-layer',
-      payload: sensor2.scaleTo(0, 24),
-    }));
+  });
+    
   /* - svg controls */
   const a5 = new five.Button({
     pin: 'a5'
   });
-  a5.on('press', () => emmetButtonEvent('svg-1'));
-
-  const a4 = new five.Button({
-    pin: 'a4'
+  a5.on('press', () => {
+    socket.emit('fromTessel', {
+      event: 'svg-1',
+      payload: 0,
+    });
   });
-  a4.on('press', () => emmetButtonEvent('svg-2'));
+
+  const a6 = new five.Button({
+    pin: 'a6'
+  });
+  a6.on('press', () => {
+    socket.emit('fromTessel', {
+      event: 'svg-2',
+      payload: 0,
+    });
+  });
 });
